@@ -42,14 +42,14 @@ public class UserController {
                 .result(userService.getUser(userId))
                 .build();
     }
-//
-//    @GetMapping("/my-info")
-//    ApiResponse<UserResponse> getMyInfo() {
-//        return ApiResponse.<UserResponse>builder()
-//                .result(userService.getMyInfo())
-//                .build();
-//    }
-//
+
+   @GetMapping("/my-info")
+   ApiResponse<UserResponse> getMyInfo() {
+       return ApiResponse.<UserResponse>builder()
+               .result(userService.getMyInfo())
+               .build();
+   }
+
     @DeleteMapping("/{userId}")
     ApiResponse<String> deleteUser(@PathVariable String userId) {
         userService.deleteUser(userId);

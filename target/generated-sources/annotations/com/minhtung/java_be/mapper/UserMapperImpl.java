@@ -2,8 +2,14 @@ package com.minhtung.java_be.mapper;
 
 import com.minhtung.java_be.dto.request.UserCreationRequest;
 import com.minhtung.java_be.dto.request.UserUpdateRequest;
+import com.minhtung.java_be.dto.response.PermissionResponse;
+import com.minhtung.java_be.dto.response.RoleResponse;
 import com.minhtung.java_be.dto.response.UserResponse;
+import com.minhtung.java_be.entity.Permission;
+import com.minhtung.java_be.entity.Role;
 import com.minhtung.java_be.entity.User;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
@@ -44,6 +50,7 @@ public class UserMapperImpl implements UserMapper {
         userResponse.firstName( user.getFirstName() );
         userResponse.lastName( user.getLastName() );
         userResponse.dob( user.getDob() );
+        userResponse.roles( roleSetToRoleResponseSet( user.getRoles() ) );
 
         return userResponse.build();
     }
@@ -58,5 +65,58 @@ public class UserMapperImpl implements UserMapper {
         user.setFirstName( request.getFirstName() );
         user.setDob( request.getDob() );
         user.setLastName( request.getLastName() );
+    }
+
+    protected PermissionResponse permissionToPermissionResponse(Permission permission) {
+        if ( permission == null ) {
+            return null;
+        }
+
+        PermissionResponse.PermissionResponseBuilder permissionResponse = PermissionResponse.builder();
+
+        permissionResponse.name( permission.getName() );
+        permissionResponse.description( permission.getDescription() );
+
+        return permissionResponse.build();
+    }
+
+    protected Set<PermissionResponse> permissionSetToPermissionResponseSet(Set<Permission> set) {
+        if ( set == null ) {
+            return null;
+        }
+
+        Set<PermissionResponse> set1 = new LinkedHashSet<PermissionResponse>( Math.max( (int) ( set.size() / .75f ) + 1, 16 ) );
+        for ( Permission permission : set ) {
+            set1.add( permissionToPermissionResponse( permission ) );
+        }
+
+        return set1;
+    }
+
+    protected RoleResponse roleToRoleResponse(Role role) {
+        if ( role == null ) {
+            return null;
+        }
+
+        RoleResponse.RoleResponseBuilder roleResponse = RoleResponse.builder();
+
+        roleResponse.name( role.getName() );
+        roleResponse.description( role.getDescription() );
+        roleResponse.permissions( permissionSetToPermissionResponseSet( role.getPermissions() ) );
+
+        return roleResponse.build();
+    }
+
+    protected Set<RoleResponse> roleSetToRoleResponseSet(Set<Role> set) {
+        if ( set == null ) {
+            return null;
+        }
+
+        Set<RoleResponse> set1 = new LinkedHashSet<RoleResponse>( Math.max( (int) ( set.size() / .75f ) + 1, 16 ) );
+        for ( Role role : set ) {
+            set1.add( roleToRoleResponse( role ) );
+        }
+
+        return set1;
     }
 }
