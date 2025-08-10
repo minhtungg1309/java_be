@@ -23,9 +23,6 @@ java_be/
 mvn clean install
 mvn spring-boot:run
 
-# Nếu dùng Gradle:
-./gradlew bootRun
-```
 
 ## Đóng góp
 
