@@ -1,4 +1,4 @@
-package com.minhtung.java_be.dto.response;
+package com.minhtung.java_be.dto.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,7 +8,6 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IntrospectResponse {
-    boolean valid;
-    String userId;
+public class SearchUserRequest {
+    String keyword;
 }

@@ -1,14 +1,17 @@
-package com.minhtung.java_be.dto.response;
+package com.minhtung.java_be.entity;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Setter
+@Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IntrospectResponse {
-    boolean valid;
+public class ParticipantInfo {
     String userId;
+    String username;
+    String firstName;
+    String lastName;
 }

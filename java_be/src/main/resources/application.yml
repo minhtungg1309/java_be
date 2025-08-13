@@ -19,7 +19,10 @@ spring:
     baseline-on-migrate: true
     validate-on-migrate: true
     clean-disabled: true
-
+  data:
+    mongodb:
+      uri: mongodb://root:root@localhost:27017/chat?authSource=admin
+      auto-index-creation: true
 jwt:
   signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
   valid-duration: 6000 # in second

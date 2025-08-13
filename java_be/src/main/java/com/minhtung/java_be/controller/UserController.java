@@ -1,6 +1,7 @@
 package com.minhtung.java_be.controller;
 
 import com.minhtung.java_be.dto.request.ApiResponse;
+import com.minhtung.java_be.dto.request.SearchUserRequest;
 import com.minhtung.java_be.dto.request.UserCreationRequest;
 import com.minhtung.java_be.dto.request.UserUpdateRequest;
 import com.minhtung.java_be.dto.response.UserResponse;
@@ -60,6 +61,12 @@ public class UserController {
     ApiResponse<UserResponse> updateUser(@PathVariable String userId, @RequestBody UserUpdateRequest request) {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.updateUser(userId, request))
+                .build();
+    }
+    @PostMapping("/search")
+    ApiResponse<List<UserResponse>> search(@RequestBody SearchUserRequest request) {
+        return ApiResponse.<List<UserResponse>>builder()
+                .result(userService.search(request))
                 .build();
     }
 }

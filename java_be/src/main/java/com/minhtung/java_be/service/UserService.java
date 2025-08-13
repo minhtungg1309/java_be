@@ -2,6 +2,7 @@ package com.minhtung.java_be.service;
 import java.util.HashSet;
 import java.util.List;
 import com.minhtung.java_be.constant.PredefinedRole;
+import com.minhtung.java_be.dto.request.SearchUserRequest;
 import com.minhtung.java_be.dto.request.UserCreationRequest;
 import com.minhtung.java_be.dto.request.UserUpdateRequest;
 import com.minhtung.java_be.dto.response.UserResponse;
@@ -89,5 +90,14 @@ public class UserService {
     public UserResponse getUser(String id) {
         return userMapper.toUserResponse(
                 userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+    }
+
+    public List<UserResponse> search(SearchUserRequest request) {
+        var userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<User> user = userRepository.findAllByUsernameLike(request.getKeyword());
+        return user.stream()
+                .filter(userName -> !userId.equals(userName.getId()))
+                .map(userMapper::toUserResponse)
+                .toList();
     }
 }
