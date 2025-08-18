@@ -71,12 +71,14 @@ public class ConversationService {
                                     .username(currentUser.getUsername())
                                     .firstName(currentUser.getFirstName())
                                     .lastName(currentUser.getLastName())
+                                    .avatar(currentUser.getAvatar())
                                     .build(),
                             ParticipantInfo.builder()
                                     .userId(participantUser.getId())
                                     .username(participantUser.getUsername())
                                     .firstName(participantUser.getFirstName())
                                     .lastName(participantUser.getLastName())
+                                    .avatar(participantUser.getAvatar())
                                     .build()
                     );
 

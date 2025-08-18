@@ -14,4 +14,5 @@ public class ParticipantInfo {
     String username;
     String firstName;
     String lastName;
+    String avatar;
 }

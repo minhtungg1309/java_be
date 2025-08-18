@@ -15,7 +15,7 @@ public class UserCreationRequest {
     //@Size(min = 4, message = "USERNAME_INVALID")
     String username;
 
- //   @Size(min = 6, message = "INVALID_PASSWORD")
+    //@Size(min = 6, message = "INVALID_PASSWORD")
     String password;
 
     String firstName;
@@ -23,4 +23,8 @@ public class UserCreationRequest {
 
    // @DobConstraint(min = 10, message = "INVALID_DOB")
     LocalDate dob;
+    String avatar;
+    String city;
+    String email;
+    String phone;
 }

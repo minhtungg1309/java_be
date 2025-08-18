@@ -95,6 +95,7 @@ public class ChatMessageService {
                 .username(userInfo.getUsername())
                 .firstName(userInfo.getFirstName())
                 .lastName(userInfo.getLastName())
+                .avatar(userInfo.getAvatar())
                 .build());
         chatMessage.setCreatedDate(Instant.now());
 
