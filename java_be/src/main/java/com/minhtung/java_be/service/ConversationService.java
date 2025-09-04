@@ -2,12 +2,14 @@ package com.minhtung.java_be.service;
 
 import com.minhtung.java_be.dto.request.ConversationRequest;
 import com.minhtung.java_be.dto.response.ConversationResponse;
+import com.minhtung.java_be.entity.ChatMessage;
 import com.minhtung.java_be.entity.Conversation;
 import com.minhtung.java_be.entity.ParticipantInfo;
 import com.minhtung.java_be.entity.User;
 import com.minhtung.java_be.exception.AppException;
 import com.minhtung.java_be.exception.ErrorCode;
 import com.minhtung.java_be.mapper.ConversationMapper;
+import com.minhtung.java_be.repository.ChatMessageRepository;
 import com.minhtung.java_be.repository.ConversationRepository;
 import com.minhtung.java_be.repository.UserRepository;
 import lombok.AccessLevel;
@@ -31,6 +33,7 @@ public class ConversationService {
     ConversationRepository conversationRepository;
     UserRepository userRepository;
     ConversationMapper conversationMapper;
+    ChatMessageRepository chatMessageRepository;
 
     public List<ConversationResponse> myConversations() {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -40,8 +43,43 @@ public class ConversationService {
     }
 
     public ConversationResponse create(ConversationRequest request) {
-        // 1) Lấy current userId từ SecurityContext
         final String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if ("GROUP".equals(request.getType())) {
+            List<String> participantIds = new ArrayList<>(request.getParticipantIds());
+            if (!participantIds.contains(currentUserId)) {
+                participantIds.add(currentUserId);
+            }
+            if (participantIds.size() < 3) { // nhóm phải >= 3 người (bao gồm cả mình)
+                throw new AppException(ErrorCode.USER_NOT_EXISTED); // hoặc lỗi riêng "GROUP_TOO_FEW_MEMBERS"
+            }
+            List<ParticipantInfo> participants = participantIds.stream().map(id -> {
+                User user = userRepository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                return ParticipantInfo.builder()
+                        .userId(user.getId())
+                        .username(user.getUsername())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .avatar(user.getAvatar())
+                        .build();
+            }).toList();
+
+            String participantsHash = generateParticipantHash(participantIds.stream().sorted().toList());
+
+            Conversation conversation = Conversation.builder()
+                    .type("GROUP")
+                    .participantsHash(participantsHash)
+                    .participants(participants)
+                    .conversationName(request.getName())
+                    .conversationAvatar(request.getAvatarGroup())
+                    .createdDate(Instant.now())
+                    .modifiedDate(Instant.now())
+                    .build();
+
+            conversation = conversationRepository.save(conversation);
+            return toConversationResponse(conversation);
+        }
 
         // 2) Lấy participantId đầu tiên từ request và validate
         final String participantId = request.getParticipantIds()
@@ -108,14 +146,35 @@ public class ConversationService {
     private ConversationResponse toConversationResponse(Conversation conversation) {
         String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        // Lấy tin nhắn cuối cùng
+        ChatMessage lastMessage = chatMessageRepository
+                .findFirstByConversationIdOrderByCreatedDateDesc(conversation.getId())
+                .orElse(null);
+
+        // Map cơ bản
         ConversationResponse conversationResponse = conversationMapper.toConversationResponse(conversation);
 
-        conversation.getParticipants().stream()
-                .filter(participantInfo -> !participantInfo.getUserId().equals(currentUserId))
-                .findFirst().ifPresent(participantInfo -> {
-                    conversationResponse.setConversationName(participantInfo.getUsername());
-                });
+        if ("DIRECT".equals(conversation.getType())) {
+            // Gán tên đối phương (nếu là chat 1-1)
+            conversation.getParticipants().stream()
+                    .filter(participantInfo -> !participantInfo.getUserId().equals(currentUserId))
+                    .findFirst().ifPresent(participantInfo -> {
+                        conversationResponse.setConversationName(participantInfo.getUsername());
+                    });
+        } else if ("GROUP".equals(conversation.getType())) {
+            // Gán tên nhóm (nếu là group)
+            conversationResponse.setConversationName(conversation.getConversationName());
+        }
+
+        // Gán thêm thông tin lastMessage
+        if (lastMessage != null) {
+            conversationResponse.setLastMessage(lastMessage.getMessage());
+            conversationResponse.setLastMessageSender(
+                    lastMessage.getSender() != null ? lastMessage.getSender().getUsername() : null
+            );
+        }
 
         return conversationResponse;
     }
+
 }

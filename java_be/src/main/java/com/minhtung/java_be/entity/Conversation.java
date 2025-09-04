@@ -27,7 +27,9 @@ public class Conversation {
 
     List<ParticipantInfo> participants;
 
-    Instant createdDate;
+    String conversationName;
+    String conversationAvatar;
 
+    Instant createdDate;
     Instant modifiedDate;
 }

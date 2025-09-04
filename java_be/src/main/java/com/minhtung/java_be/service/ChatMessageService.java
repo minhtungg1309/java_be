@@ -98,6 +98,7 @@ public class ChatMessageService {
                 .avatar(userInfo.getAvatar())
                 .build());
         chatMessage.setCreatedDate(Instant.now());
+        chatMessage.setIsRead(false);
 
         // Create chat message
         chatMessage = chatMessageRepository.save(chatMessage);
@@ -133,8 +134,6 @@ public class ChatMessageService {
         // convert to Response
         return toChatMessageResponse(chatMessage);
 
-
-
     }
     private ChatMessageResponse toChatMessageResponse(ChatMessage chatMessage) {
         String userId = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -143,5 +142,15 @@ public class ChatMessageService {
         chatMessageResponse.setMe(userId.equals(chatMessage.getSender().getUserId()));
 
         return chatMessageResponse;
+    }
+
+    public void markMessagesAsRead(String conversationId) {
+        String currentUserId = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        List<ChatMessage> unreadMessages = chatMessageRepository
+            .findByConversationIdAndSenderUserIdNotAndIsReadFalse(conversationId, currentUserId);
+        
+        unreadMessages.forEach(message -> message.setIsRead(true));
+        chatMessageRepository.saveAll(unreadMessages);
     }
 }

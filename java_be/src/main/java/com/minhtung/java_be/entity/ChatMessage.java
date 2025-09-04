@@ -28,5 +28,6 @@ public class ChatMessage {
 
     @Indexed
     Instant createdDate;
+    Boolean isRead = false;
 }
 
