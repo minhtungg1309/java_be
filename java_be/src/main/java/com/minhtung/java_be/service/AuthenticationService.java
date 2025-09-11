@@ -88,9 +88,11 @@ public class AuthenticationService {
         if (!authenticated) throw new AppException(ErrorCode.UNAUTHENTICATED);
 
         var token = generateToken(user);
+        var scope = buildScope(user);
 
         return AuthenticationResponse.builder()
                 .token(token)
+                .role(scope)
                 .authenticated(true)
                 .build();
     }
