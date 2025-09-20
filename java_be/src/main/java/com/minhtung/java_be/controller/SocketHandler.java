@@ -4,13 +4,14 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
+import com.corundumstudio.socketio.annotation.OnEvent;
 import com.minhtung.java_be.dto.request.IntrospectRequest;
 import com.minhtung.java_be.dto.response.IntrospectResponse;
+import com.minhtung.java_be.dto.signaling.*;
 import com.minhtung.java_be.entity.WebSocketSession;
 import com.minhtung.java_be.service.AuthenticationService;
-import com.minhtung.java_be.service.UserService;
+import com.minhtung.java_be.service.SignalingService;
 import com.minhtung.java_be.service.WebSocketSessionService;
-import com.nimbusds.jose.JOSEException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.AccessLevel;
@@ -30,6 +31,7 @@ public class SocketHandler {
     SocketIOServer server;
     WebSocketSessionService webSocketSessionService;
     AuthenticationService authenticationService;
+    SignalingService signalingService;
 
     @OnConnect
     public void clientConnected(SocketIOClient client) {
@@ -50,9 +52,9 @@ public class SocketHandler {
                             .token(token)
                             .build()
             );
-        } catch (  ParseException e) {
+        } catch (ParseException e) {
             log.error("Token introspection failed, disconnect {}", client.getSessionId(), e);
-            client.disconnect(); // quan trọng: ngắt kết nối khi introspect lỗi
+            client.disconnect();
             return;
         }
 
@@ -68,27 +70,47 @@ public class SocketHandler {
             webSocketSession = webSocketSessionService.create(webSocketSession);
 
             log.info("WebSocketSession created with id: {}", webSocketSession.getId());
-        }else {
+        } else {
             log.error("Authentication fail: {}", client.getSessionId());
             client.disconnect();
         }
-
-//        // Token hợp lệ -> lưu WebSocketSession
-//        log.info("Client connected: {}", client.getSessionId());
-//        WebSocketSession webSocketSession = WebSocketSession.builder()
-//                .socketSessionId(client.getSessionId().toString())
-//                .userId(introspectResponse.g())
-//                .createdAt(Instant.now())
-//                .build();
-//
-//        webSocketSession = webSocketSessionService.create(webSocketSession);
-//        log.info("WebSocketSession created with id: {}", webSocketSession.getId());
     }
 
     @OnDisconnect
     public void clientDisconnected(SocketIOClient client) {
         log.info("Client disConnected: {}", client.getSessionId());
         webSocketSessionService.deleteSession(client.getSessionId().toString());
+    }
+
+    // Signaling Events
+    @OnEvent("call-offer")
+    public void onCallOffer(SocketIOClient client, CallOffer callOffer) {
+        log.info("Received call offer from client: {}", client.getSessionId());
+        signalingService.handleCallOffer(callOffer);
+    }
+
+    @OnEvent("call-answer")
+    public void onCallAnswer(SocketIOClient client, CallAnswer callAnswer) {
+        log.info("Received call answer from client: {}", client.getSessionId());
+        signalingService.handleCallAnswer(callAnswer);
+    }
+
+    @OnEvent("ice-candidate")
+    public void onIceCandidate(SocketIOClient client, IceCandidate iceCandidate) {
+        log.info("Received ICE candidate from client: {}", client.getSessionId());
+        signalingService.handleIceCandidate(iceCandidate);
+    }
+
+    @OnEvent("call-event")
+    public void onCallEvent(SocketIOClient client, CallEvent callEvent) {
+        log.info("Received call event: {} from client: {}", callEvent.getEvent(), client.getSessionId());
+        signalingService.handleCallEvent(callEvent);
+    }
+
+    @OnEvent("check-user-status")
+    public void onCheckUserStatus(SocketIOClient client, String userId) {
+        boolean isOnline = signalingService.isUserOnline(userId);
+        client.sendEvent("user-status", isOnline ? "online" : "offline");
     }
 
     @PostConstruct
@@ -101,7 +123,7 @@ public class SocketHandler {
     @PreDestroy
     public void stopServer() {
         server.stop();
-        log.info("Socket server stoped");
+        log.info("Socket server stopped");
     }
 }
 
