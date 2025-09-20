@@ -23,20 +23,20 @@ import java.util.UUID;
 public class SignalingService {
     SocketIOServer server;
     WebSocketSessionService webSocketSessionService;
-    UserService userService; // Add this dependency
+    UserService userService; // Thêm dependency này
     UserRepository userRepository;
 
     public void handleCallOffer(CallOffer callOffer) {
-        log.info("Handling call offer from {} to {}", callOffer.getCallerId(), callOffer.getCalleeId());
-        
-        // Validate call offer
+        log.info("Xử lý call offer từ {} đến {}", callOffer.getCallerId(), callOffer.getCalleeId());
+
+        // Kiểm tra hợp lệ của call offer
         if (callOffer.getCallerId() == null || callOffer.getCalleeId() == null) {
-            log.error("Invalid call offer: missing caller or callee ID");
+            log.error("Call offer không hợp lệ: thiếu callerId hoặc calleeId");
             return;
         }
 
         try {
-            // Enrich caller information
+            // Bổ sung thông tin cho caller
             Optional<User> callerUser = userRepository.findById(callOffer.getCallerId());
             if (callerUser.isPresent()) {
                 User caller = callerUser.get();
@@ -47,12 +47,12 @@ public class SignalingService {
                         .avatar(caller.getAvatar())
                         .displayName(getDisplayName(caller))
                         .build();
-                
+
                 callOffer.setCallerInfo(callerInfo);
-                log.info("Enriched caller info: {}", callerInfo.getDisplayName());
+                log.info("Đã bổ sung thông tin caller: {}", callerInfo.getDisplayName());
             } else {
-                log.warn("Caller user not found: {}", callOffer.getCallerId());
-                // Set fallback caller info
+                log.warn("Không tìm thấy caller: {}", callOffer.getCallerId());
+                // Gán thông tin caller mặc định
                 CallerInfo fallbackInfo = CallerInfo.builder()
                         .username("Unknown User")
                         .displayName("Unknown User")
@@ -60,46 +60,46 @@ public class SignalingService {
                 callOffer.setCallerInfo(fallbackInfo);
             }
 
-            // Check if callee is online
+            // Kiểm tra callee có đang online không
             List<WebSocketSession> calleeSession = webSocketSessionService.findByUserId(callOffer.getCalleeId());
             if (calleeSession.isEmpty()) {
-                log.warn("Callee {} is not online", callOffer.getCalleeId());
-                // Send caller that callee is offline
-                sendToUser(callOffer.getCallerId(), "call-status", 
-                    CallEvent.builder()
-                        .callId(callOffer.getCallId())
-                        .callerId(callOffer.getCallerId())
-                        .calleeId(callOffer.getCalleeId())
-                        .event("offline")
-                        .reason("User is not online")
-                        .build());
+                log.warn("Callee {} không online", callOffer.getCalleeId());
+                // Gửi cho caller biết callee offline
+                sendToUser(callOffer.getCallerId(), "call-status",
+                        CallEvent.builder()
+                                .callId(callOffer.getCallId())
+                                .callerId(callOffer.getCallerId())
+                                .calleeId(callOffer.getCalleeId())
+                                .event("offline")
+                                .reason("User is not online")
+                                .build());
                 return;
             }
 
-            // Generate call ID if not provided
+            // Tạo call ID nếu chưa có
             if (callOffer.getCallId() == null || callOffer.getCallId().isEmpty()) {
                 callOffer.setCallId(UUID.randomUUID().toString());
             }
 
-            // Forward offer to callee
+            // Gửi offer đến callee
             sendToUser(callOffer.getCalleeId(), "incoming-call", callOffer);
-            
-            log.info("Call offer forwarded to {} with caller info: {}", 
-                    callOffer.getCalleeId(), 
+
+            log.info("Đã forward call offer đến {} với thông tin caller: {}",
+                    callOffer.getCalleeId(),
                     callOffer.getCallerInfo().getDisplayName());
 
         } catch (Exception e) {
-            log.error("Error handling call offer: {}", e.getMessage(), e);
-            
-            // Send error to caller
-            sendToUser(callOffer.getCallerId(), "call-status", 
-                CallEvent.builder()
-                    .callId(callOffer.getCallId())
-                    .callerId(callOffer.getCallerId())
-                    .calleeId(callOffer.getCalleeId())
-                    .event("error")
-                    .reason("Internal server error")
-                    .build());
+            log.error("Lỗi khi xử lý call offer: {}", e.getMessage(), e);
+
+            // Gửi lỗi về cho caller
+            sendToUser(callOffer.getCallerId(), "call-status",
+                    CallEvent.builder()
+                            .callId(callOffer.getCallId())
+                            .callerId(callOffer.getCallerId())
+                            .calleeId(callOffer.getCalleeId())
+                            .event("error")
+                            .reason("Internal server error")
+                            .build());
         }
     }
 
@@ -116,17 +116,17 @@ public class SignalingService {
     }
 
     public void handleCallAnswer(CallAnswer callAnswer) {
-        log.info("Handling call answer from {} to {}", callAnswer.getCalleeId(), callAnswer.getCallerId());
+        log.info("Xử lý call answer từ {} đến {}", callAnswer.getCalleeId(), callAnswer.getCallerId());
         sendToUser(callAnswer.getCallerId(), "call-answered", callAnswer);
     }
 
     public void handleIceCandidate(IceCandidate iceCandidate) {
-        log.info("Handling ICE candidate from {} to {}", iceCandidate.getFromUserId(), iceCandidate.getToUserId());
+        log.info("Xử lý ICE candidate từ {} đến {}", iceCandidate.getFromUserId(), iceCandidate.getToUserId());
         sendToUser(iceCandidate.getToUserId(), "ice-candidate", iceCandidate);
     }
 
     public void handleCallEvent(CallEvent callEvent) {
-        log.info("Handling call event: {} for call {}", callEvent.getEvent(), callEvent.getCallId());
+        log.info("Xử lý call event: {} cho cuộc gọi {}", callEvent.getEvent(), callEvent.getCallId());
 
         switch (callEvent.getEvent()) {
             case "reject":
@@ -144,7 +144,7 @@ public class SignalingService {
     private void sendToUser(String userId, String event, Object data) {
         List<WebSocketSession> sessions = webSocketSessionService.findByUserId(userId);
         if (sessions.isEmpty()) {
-            log.warn("User {} is not online", userId);
+            log.warn("User {} không online", userId);
             return;
         }
 
@@ -155,13 +155,13 @@ public class SignalingService {
 
                 if (client != null && client.isChannelOpen()) {
                     client.sendEvent(event, data);
-                    log.debug("Sent {} event to user {} (session {})", event, userId, sessionUUID);
+                    log.debug("Đã gửi event {} đến user {} (session {})", event, userId, sessionUUID);
                 } else {
-                    log.warn("Dead session {} for user {}", sessionUUID, userId);
+                    log.warn("Session {} của user {} đã chết", sessionUUID, userId);
                     webSocketSessionService.deleteSession(session.getSocketSessionId());
                 }
             } catch (IllegalArgumentException e) {
-                log.error("Invalid UUID format for session: {}", session.getSocketSessionId());
+                log.error("UUID không hợp lệ cho session: {}", session.getSocketSessionId());
             }
         }
     }
