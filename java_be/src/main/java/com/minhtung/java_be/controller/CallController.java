@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 public class CallController {
     SignalingService signalingService;
 
-    @GetMapping("/status/{userId}")
-    public ResponseEntity<String> checkUserStatus(@PathVariable String userId) {
-        boolean isOnline = signalingService.isUserOnline(userId);
-        return ResponseEntity.ok(isOnline ? "online" : "offline");
-    }
+//    @GetMapping("/status/{userId}")
+//    public ResponseEntity<String> checkUserStatus(@PathVariable String userId) {
+//        boolean isOnline = signalingService.isUserOnline(userId);
+//        return ResponseEntity.ok(isOnline ? "online" : "offline");
+  //  }
 }

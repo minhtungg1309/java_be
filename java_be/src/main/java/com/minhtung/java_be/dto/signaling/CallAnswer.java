@@ -9,9 +9,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CallAnswer {
-     String callerId;
-     String calleeId;
-     String sdp;
-     String type; // "answer"
-     String callId;
+    String conversationId;
+    String sdp;
+    String type;   // "answer"
+    String callId;
+    String fromUserId;
 }

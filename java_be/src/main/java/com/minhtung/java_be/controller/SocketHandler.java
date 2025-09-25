@@ -35,7 +35,6 @@ public class SocketHandler {
 
     @OnConnect
     public void clientConnected(SocketIOClient client) {
-        // Lấy token từ query
         String token = client.getHandshakeData().getSingleUrlParam("token");
         if (token == null || token.isBlank()) {
             log.error("Missing token, disconnect {}", client.getSessionId());
@@ -43,14 +42,10 @@ public class SocketHandler {
             return;
         }
 
-        // Khai báo trước để dùng sau try-catch
         IntrospectResponse introspectResponse;
-
         try {
             introspectResponse = authenticationService.introspect(
-                    IntrospectRequest.builder()
-                            .token(token)
-                            .build()
+                    IntrospectRequest.builder().token(token).build()
             );
         } catch (ParseException e) {
             log.error("Token introspection failed, disconnect {}", client.getSessionId(), e);
@@ -58,10 +53,12 @@ public class SocketHandler {
             return;
         }
 
-        // If Token is invalid disconnect
         if (introspectResponse.isValid()) {
             log.info("Client connected: {}", client.getSessionId());
-            // Persist webSocketSession
+
+            // **LƯU userId vào client để dùng sau**
+            client.set("userId", introspectResponse.getUserId());
+
             WebSocketSession webSocketSession = WebSocketSession.builder()
                     .socketSessionId(client.getSessionId().toString())
                     .userId(introspectResponse.getUserId())
@@ -85,33 +82,62 @@ public class SocketHandler {
     // Signaling Events
     @OnEvent("call-offer")
     public void onCallOffer(SocketIOClient client, CallOffer callOffer) {
-        log.info("Received call offer from client: {}", client.getSessionId());
-        signalingService.handleCallOffer(callOffer);
+        try {
+            // **LẤY userId từ client attributes (đã verify từ token)**
+            String callerId = client.get("userId");
+            if (callerId == null) {
+                log.error("❌ No userId found in client session: {}", client.getSessionId());
+                return;
+            }
+
+            callOffer.setCallerId(callerId);
+            log.info("📞 Call offer from {} to conversation {}", callerId, callOffer.getConversationId());
+
+            signalingService.handleCallOffer(callOffer);
+        } catch (Exception e) {
+            log.error("❌ Error handling call offer", e);
+        }
     }
 
     @OnEvent("call-answer")
     public void onCallAnswer(SocketIOClient client, CallAnswer callAnswer) {
-        log.info("Received call answer from client: {}", client.getSessionId());
+        String userId = client.get("userId");
+        log.info("Received call answer from user: {} (session: {})", userId, client.getSessionId());
         signalingService.handleCallAnswer(callAnswer);
     }
 
     @OnEvent("ice-candidate")
     public void onIceCandidate(SocketIOClient client, IceCandidate iceCandidate) {
-        log.info("Received ICE candidate from client: {}", client.getSessionId());
+        String userId = client.get("userId");
+        log.info("Received ICE candidate from user: {} (session: {})", userId, client.getSessionId());
+
+        // **SET userId nếu cần**
+        if (iceCandidate.getFromUserId() == null) {
+            iceCandidate.setFromUserId(userId);
+        }
+
         signalingService.handleIceCandidate(iceCandidate);
     }
 
     @OnEvent("call-event")
     public void onCallEvent(SocketIOClient client, CallEvent callEvent) {
-        log.info("Received call event: {} from client: {}", callEvent.getEvent(), client.getSessionId());
+        String userId = client.get("userId");
+        log.info("Received call event: {} from user: {} (session: {})",
+                callEvent.getEvent(), userId, client.getSessionId());
+
+        // **SET userId nếu cần**
+        if (callEvent.getFromUserId() == null) {
+            callEvent.setFromUserId(userId);
+        }
+
         signalingService.handleCallEvent(callEvent);
     }
 
-    @OnEvent("check-user-status")
-    public void onCheckUserStatus(SocketIOClient client, String userId) {
-        boolean isOnline = signalingService.isUserOnline(userId);
-        client.sendEvent("user-status", isOnline ? "online" : "offline");
-    }
+//    @OnEvent("check-user-status")
+//    public void onCheckUserStatus(SocketIOClient client, String userId) {
+//        boolean isOnline = signalingService.isUserOnline(userId);
+//        client.sendEvent("user-status", isOnline ? "online" : "offline");
+//    }
 
     @PostConstruct
     public void startServer() {

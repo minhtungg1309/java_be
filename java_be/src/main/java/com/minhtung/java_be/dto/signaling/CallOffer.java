@@ -9,15 +9,12 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CallOffer {
-    String callerId;
-    String calleeId;
+    String conversationId;       // Bỏ callerId / calleeId → thay bằng conversationId
     String sdp;
-    String type;
-    String callType; // "audio" or "video"
+    String type;                 // "offer"
+    String callType;             // "audio" | "video"
     String callId;
-    
-    // Add caller information
-    CallerInfo callerInfo;
+    String callerId;
     
 
 }

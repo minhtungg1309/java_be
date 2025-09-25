@@ -9,10 +9,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class IceCandidate {
+    String conversationId;
     String candidate;
     String sdpMid;
     Integer sdpMLineIndex;
     String callId;
     String fromUserId;
-    String toUserId;
 }

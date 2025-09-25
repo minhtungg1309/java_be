@@ -9,9 +9,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CallEvent {
+    String conversationId;
     String callId;
-    String callerId;
-    String calleeId;
-    String event; // "reject", "accept", "end", "busy"
+    String event;   // "reject", "accept", "end", "busy", "offline", "error"
     String reason;
+    String fromUserId;
 }

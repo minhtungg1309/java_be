@@ -176,5 +176,15 @@ public class ConversationService {
 
         return conversationResponse;
     }
+    public List<String> getParticipantIds(String conversationId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+
+        return conversation.getParticipants()
+                .stream()
+                .map(ParticipantInfo::getUserId)
+                .toList();
+    }
+
 
 }
