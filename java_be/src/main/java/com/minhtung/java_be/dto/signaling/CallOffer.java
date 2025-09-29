@@ -15,6 +15,5 @@ public class CallOffer {
     String callType;             // "audio" | "video"
     String callId;
     String callerId;
-    
-
+    CallerInfo callerInfo;
 }

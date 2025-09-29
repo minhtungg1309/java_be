@@ -37,7 +37,7 @@ public class SocketHandler {
     public void clientConnected(SocketIOClient client) {
         String token = client.getHandshakeData().getSingleUrlParam("token");
         if (token == null || token.isBlank()) {
-            log.error("Missing token, disconnect {}", client.getSessionId());
+            log.error("❌ Thiếu token, ngắt kết nối {}", client.getSessionId());
             client.disconnect();
             return;
         }
@@ -48,70 +48,63 @@ public class SocketHandler {
                     IntrospectRequest.builder().token(token).build()
             );
         } catch (ParseException e) {
-            log.error("Token introspection failed, disconnect {}", client.getSessionId(), e);
+            log.error("❌ Xác thực token thất bại, ngắt kết nối {}", client.getSessionId(), e);
             client.disconnect();
             return;
         }
 
         if (introspectResponse.isValid()) {
-            log.info("Client connected: {}", client.getSessionId());
+            String userId = introspectResponse.getUserId();
+            log.info("✅ Client {} kết nối thành công với userId={}", client.getSessionId(), userId);
 
-            // **LƯU userId vào client để dùng sau**
-            client.set("userId", introspectResponse.getUserId());
+            client.set("userId", userId);
 
             WebSocketSession webSocketSession = WebSocketSession.builder()
                     .socketSessionId(client.getSessionId().toString())
-                    .userId(introspectResponse.getUserId())
+                    .userId(userId)
                     .createdAt(Instant.now())
                     .build();
-            webSocketSession = webSocketSessionService.create(webSocketSession);
+            webSocketSessionService.create(webSocketSession);
 
-            log.info("WebSocketSession created with id: {}", webSocketSession.getId());
+            log.info("💾 WebSocketSession được lưu cho userId={} (session={})", userId, client.getSessionId());
         } else {
-            log.error("Authentication fail: {}", client.getSessionId());
+            log.error("❌ Token không hợp lệ, ngắt kết nối {}", client.getSessionId());
             client.disconnect();
         }
     }
 
     @OnDisconnect
     public void clientDisconnected(SocketIOClient client) {
-        log.info("Client disConnected: {}", client.getSessionId());
+        log.info("❌ Client ngắt kết nối: {}", client.getSessionId());
         webSocketSessionService.deleteSession(client.getSessionId().toString());
     }
 
-    // Signaling Events
+    // === Các event từ FE gửi lên ===
     @OnEvent("call-offer")
     public void onCallOffer(SocketIOClient client, CallOffer callOffer) {
-        try {
-            // **LẤY userId từ client attributes (đã verify từ token)**
-            String callerId = client.get("userId");
-            if (callerId == null) {
-                log.error("❌ No userId found in client session: {}", client.getSessionId());
-                return;
-            }
+        String callerId = client.get("userId");
+        log.info("⬆️ [FE->BE] call-offer từ userId={} session={}, data={}",
+                callerId, client.getSessionId(), callOffer);
 
-            callOffer.setCallerId(callerId);
-            log.info("📞 Call offer from {} to conversation {}", callerId, callOffer.getConversationId());
-
-            signalingService.handleCallOffer(callOffer);
-        } catch (Exception e) {
-            log.error("❌ Error handling call offer", e);
-        }
+        callOffer.setCallerId(callerId);
+        signalingService.handleCallOffer(callOffer);
     }
 
     @OnEvent("call-answer")
     public void onCallAnswer(SocketIOClient client, CallAnswer callAnswer) {
         String userId = client.get("userId");
-        log.info("Received call answer from user: {} (session: {})", userId, client.getSessionId());
+        log.info("⬆️ [FE->BE] call-answer từ userId={} session={}, data={}",
+                userId, client.getSessionId(), callAnswer);
+
         signalingService.handleCallAnswer(callAnswer);
     }
 
     @OnEvent("ice-candidate")
     public void onIceCandidate(SocketIOClient client, IceCandidate iceCandidate) {
         String userId = client.get("userId");
-        log.info("Received ICE candidate from user: {} (session: {})", userId, client.getSessionId());
+        log.info("⬆️ [FE->BE] ice-candidate từ userId={} session={}, data={}",
+                userId, client.getSessionId(), iceCandidate);
 
-        // **SET userId nếu cần**
         if (iceCandidate.getFromUserId() == null) {
             iceCandidate.setFromUserId(userId);
         }
@@ -122,10 +115,9 @@ public class SocketHandler {
     @OnEvent("call-event")
     public void onCallEvent(SocketIOClient client, CallEvent callEvent) {
         String userId = client.get("userId");
-        log.info("Received call event: {} from user: {} (session: {})",
-                callEvent.getEvent(), userId, client.getSessionId());
+        log.info("⬆️ [FE->BE] call-event={} từ userId={} session={}, data={}",
+                callEvent.getEvent(), userId, client.getSessionId(), callEvent);
 
-        // **SET userId nếu cần**
         if (callEvent.getFromUserId() == null) {
             callEvent.setFromUserId(userId);
         }
@@ -133,23 +125,16 @@ public class SocketHandler {
         signalingService.handleCallEvent(callEvent);
     }
 
-//    @OnEvent("check-user-status")
-//    public void onCheckUserStatus(SocketIOClient client, String userId) {
-//        boolean isOnline = signalingService.isUserOnline(userId);
-//        client.sendEvent("user-status", isOnline ? "online" : "offline");
-//    }
-
     @PostConstruct
     public void startServer() {
         server.start();
         server.addListeners(this);
-        log.info("Socket server started");
+        log.info("🚀 Socket server đã khởi động");
     }
 
     @PreDestroy
     public void stopServer() {
         server.stop();
-        log.info("Socket server stopped");
+        log.info("🛑 Socket server đã dừng");
     }
 }
-

@@ -185,6 +185,16 @@ public class ConversationService {
                 .map(ParticipantInfo::getUserId)
                 .toList();
     }
+    public ParticipantInfo getParticipantInfo(String conversationId, String userId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+
+        return conversation.getParticipants().stream()
+                .filter(p -> Objects.equals(p.getUserId(), userId))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+    }
+
 
 
 }
