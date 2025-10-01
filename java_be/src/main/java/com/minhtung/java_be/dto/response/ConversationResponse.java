@@ -1,0 +1,27 @@
+package com.minhtung.java_be.dto.response;
+
+import com.minhtung.java_be.entity.ParticipantInfo;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.time.Instant;
+import java.util.List;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ConversationResponse {
+    String id;
+    String type; // GROUP, DIRECT
+    String participantsHash;
+    String conversationAvatar;
+    String conversationName;
+    List<ParticipantInfo> participants;
+    String lastMessage;       
+    String lastMessageSender;   
+    Integer unreadCount;      
+    Instant createdDate;
+    Instant modifiedDate;
+}

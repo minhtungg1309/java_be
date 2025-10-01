@@ -25,6 +25,10 @@ public class User {
     String firstName;
     LocalDate dob;
     String lastName;
+    String avatar;
+    String city;
+    String email;
+    String phone;
 
     @ManyToMany
     @JoinTable(

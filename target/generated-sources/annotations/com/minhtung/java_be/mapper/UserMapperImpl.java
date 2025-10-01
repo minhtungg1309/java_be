@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.7 (Microsoft)"
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.8 (Microsoft)"
 )
 @Component
 public class UserMapperImpl implements UserMapper {
@@ -33,6 +33,10 @@ public class UserMapperImpl implements UserMapper {
         user.firstName( request.getFirstName() );
         user.dob( request.getDob() );
         user.lastName( request.getLastName() );
+        user.avatar( request.getAvatar() );
+        user.city( request.getCity() );
+        user.email( request.getEmail() );
+        user.phone( request.getPhone() );
 
         return user.build();
     }
@@ -50,6 +54,10 @@ public class UserMapperImpl implements UserMapper {
         userResponse.firstName( user.getFirstName() );
         userResponse.lastName( user.getLastName() );
         userResponse.dob( user.getDob() );
+        userResponse.avatar( user.getAvatar() );
+        userResponse.city( user.getCity() );
+        userResponse.email( user.getEmail() );
+        userResponse.phone( user.getPhone() );
         userResponse.roles( roleSetToRoleResponseSet( user.getRoles() ) );
 
         return userResponse.build();
@@ -65,6 +73,10 @@ public class UserMapperImpl implements UserMapper {
         user.setFirstName( request.getFirstName() );
         user.setDob( request.getDob() );
         user.setLastName( request.getLastName() );
+        user.setAvatar( request.getAvatar() );
+        user.setCity( request.getCity() );
+        user.setEmail( request.getEmail() );
+        user.setPhone( request.getPhone() );
     }
 
     protected PermissionResponse permissionToPermissionResponse(Permission permission) {
