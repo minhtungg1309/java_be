@@ -1,12 +1,12 @@
 server:
   port: 8080
-  #add .address: 0.0.0.0
+  #address: 0.0.0.0
   servlet:
     context-path: /api
 
 spring:
   datasource:
-    url: ${DBMS_CONNECTION:jdbc:mysql://127.0.0.1:3306/javabe}
+    url: ${DBMS_CONNECTION:jdbc:mysql://localhost:3306/javabe}
     driverClassName: "com.mysql.cj.jdbc.Driver"
     password: ${DBMS_PASSWORD:}
     username: ${DBMS_USERNAME:root}
